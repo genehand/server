@@ -1424,6 +1424,19 @@ class Player(ABC):
             )
             and protocol_player.playback_state != PlaybackState.IDLE
         ):
+            # If a plugin source is active with its own elapsed time, use that instead
+            # of the protocol player's elapsed time (which may be based on audio position
+            # rather than the source's track position)
+            active_source = self.__final_active_source
+            if active_source and (
+                source := self.mass.players.get_plugin_source(active_source)
+            ):
+                if source.metadata and source.metadata.elapsed_time is not None:
+                    return (
+                        protocol_player.state.playback_state,
+                        source.metadata.elapsed_time,
+                        source.metadata.elapsed_time_last_updated,
+                    )
             return (
                 protocol_player.state.playback_state,
                 protocol_player.state.elapsed_time,
